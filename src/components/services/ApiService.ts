@@ -1,5 +1,9 @@
 import { IApi, IProduct, ICustomer, IOrderRequest, ISubmitAndGetIdTotal } from '../../types';
 
+type TProductsApiResponse = { total: number, 
+                             items:Promise<IProduct[]> 
+                          } 
+
 export class ApiService {
   private api: IApi;
 
@@ -12,7 +16,13 @@ export class ApiService {
    * @returns Массив товаров
    */
   async getProducts(): Promise<IProduct[]> {
-    return this.api.get<IProduct[]>('/product/');
+    try {
+      const data = await this.api.get<TProductsApiResponse>('/product/');
+      return data.items;
+    } catch (error) {
+      console.error('Не удалось получить каталог:', error);
+      return []; // Возвращаем пустой массив при ошибке
+    }
   }
 
   /**
@@ -22,13 +32,8 @@ export class ApiService {
    * @returns Промис без данных (ожидается статус 200)
    */
     
-  async sendOrder(customer: ICustomer, items: IProduct[], total: number): Promise<ISubmitAndGetIdTotal> {
+  async sendOrder(orderData: IOrderRequest): Promise<ISubmitAndGetIdTotal> {
     try {
-      const orderData: IOrderRequest = {
-        ...customer,
-        items: items.map(item => item.id),
-        total: total,
-      };
       return await this.api.post<ISubmitAndGetIdTotal>('/order/', orderData)
     } catch (error) {
       console.error('Ошибка отправки заказа:', error);

@@ -6,6 +6,7 @@ import { ApiService } from './components/services/ApiService';
 import { API_URL } from './utils/constants';
 import { ShoppingCart } from './components/models/ShoppingCart';
 import { Customer } from './components/models/Customer';
+import { IOrderRequest } from './types';
 
 const productsModel = new ProductCatalog();
 productsModel.setProductList(apiProducts.items); 
@@ -38,6 +39,16 @@ console.log(`Карзина:`, shoppingCart.getList());
 console.log(`Кол-во товаров в карзине: `, shoppingCart.getProductCount());
 console.log(`Сумма всех товаров в карзине: `,shoppingCart.getTotalPrice());
 
+shoppingCart.clear();
+console.log(`Кол-во товаров в карзине(после очистки): `, shoppingCart.getProductCount());
+
+if (product_1) { 
+  shoppingCart.add(product_1);
+}
+if (product_2) { 
+  shoppingCart.add(product_2);
+}
+
 const user = new Customer();
 user.setData({
   payment: 'online',
@@ -46,12 +57,23 @@ user.setData({
 });
 
 console.log(`Данные покупателя`,user.getData());
-console.log(`Данные прользователя(null зачит всё хорошо): `, user.validate());
+console.log(`Данные покупателя (null значит всё хорошо): `, user.validate());
 
 user.setData({ address: 'ул. Ленина, 35' });
 console.log(`Данные покупателя`,user.getData());
-console.log(`Данные прользователя(null зачит всё хорошо): `, user.validate());
+console.log(`Данные покупателя (null значит всё хорошо): `, user.validate());
 
+user.clearData();
+console.log(`Данные покупателя, после очистки (null значит всё хорошо): `, user.validate());
+
+user.setData({
+  payment: 'online',
+  email: 'mail@mail.org',
+  phone: '+79118881122',
+  address: 'ул. Ленина, 35'
+});
+
+console.log
 // Инициализация API-клиента
 const api = new Api(API_URL);
 const apiService = new ApiService(api);
@@ -66,6 +88,12 @@ apiService.getProducts()
         console.error('Ошибка при загрузке товаров из каталога API:', error);
     });
 
-apiService.sendOrder(user.getData(), shoppingCart.getList(), shoppingCart.getTotalPrice())
+const orderRequest: IOrderRequest = {
+  ...user.getData(),
+  items: shoppingCart.getList().map(item => item.id),
+  total: shoppingCart.getTotalPrice(),
+};
+    
+apiService.sendOrder(orderRequest)
   .then(order => console.log(`Данные отправленны успешно (id,total): `, order.id, order.total))
   .catch(error => console.log(`Ошибка:`, error));

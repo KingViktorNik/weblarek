@@ -26,11 +26,7 @@ export interface ICustomer {
 }
 
 // описывает структуру данных для запроса на оформление заказа в интернет‑магазине.
-export interface IOrderRequest {
-  payment: TPayment;
-  email: string;
-  phone: string;
-  address: string;
+export interface IOrderRequest extends ICustomer {
   total: number;
   items: string[];
 } 

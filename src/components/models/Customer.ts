@@ -3,44 +3,19 @@
 
 import { ICustomer, TPayment } from "../../types";
 
+type TBuyerErrors = Partial<Record<keyof ICustomer, string>>;
+
 export class Customer implements ICustomer {
   // Выбранный способ оплаты
-  private _payment: TPayment = '';
+  private payment: TPayment = '';
   // Адрес электронной почты покупателя.
-  private _email: string = '';
+  private email: string = '';
   // Контактный номер телефона покупателя.
-  private _phone: string = '';
+  private phone: string = '';
   // Физичиский адрес покупателя.
-  private _address: string = '';
+  private address: string = '';
 
-  constructor(
-    payment: TPayment = '',
-    email: string = '',
-    phone: string = '',
-    address: string = ''
-    ) {
-        this._payment = payment;
-        this._email = email;
-        this._phone = phone;
-        this._address = address;
-    }
-
-    // Геттеры
-    get payment(): TPayment {
-        return this._payment;
-    }
-
-    get email(): string {
-        return this._email;
-    }
-
-    get phone(): string {
-        return this._phone;
-    }
-
-    get address(): string {
-        return this._address;
-    }
+  constructor() {}
 
   /**
    * Обновляет только те поля, которые переданы в объекте data, не затрагивая остальные. Позволяет обновлять данные поэтапно.
@@ -48,16 +23,16 @@ export class Customer implements ICustomer {
    */
   setData(data: Partial<ICustomer>): void {
     if (data.payment !== undefined) {
-      this._payment = data.payment;
+      this.payment = data.payment;
     }
     if (data.email !== undefined) {
-      this._email = data.email;
+      this.email = data.email;
     }
     if (data.phone !== undefined) {
-      this._phone = data.phone;
+      this.phone = data.phone;
     }
     if (data.address !== undefined) {
-      this._address = data.address;
+      this.address = data.address;
     }
   }
 
@@ -67,10 +42,10 @@ export class Customer implements ICustomer {
    */
   getData(): ICustomer {
     return {
-      payment: this._payment as TPayment, // утверждение типа, т.к. может быть null
-      email: this._email,
-      phone: this._phone,
-      address: this._address
+      payment: this.payment as TPayment,
+      email: this.email,
+      phone: this.phone,
+      address: this.address
     };
   }
 
@@ -78,32 +53,32 @@ export class Customer implements ICustomer {
    * Очищает все данные покупателя, устанавливая поля в пустые или null значения.
    */
   clearData(): void {
-    this._payment = '';
-    this._email = '';
-    this._phone = '';
-    this._address = '';
+    this.payment = '';
+    this.email = '';
+    this.phone = '';
+    this.address = '';
   }
 
   /**
    * Проверяет все поля на валидность (непустота).
-   * @returns {Record<string, string> | null} - Возвращает объект с сообщениями об ошибках для невалидных полей или возвращает null если все поля валидны;
+   * @returns {TBuyerErrors | null} - Возвращает TBuyerErrors с сообщениями об ошибках для невалидных полей или возвращает null если все поля валидны;
    */
-  validate(): Record<string, string> | null {
-    const errors: Record<string, string> = {};
+  validate(): TBuyerErrors | null {
+    const errors: TBuyerErrors = {};
 
-    if (this._payment === null) {
+    if (this.payment === null) {
       errors.payment = 'Не выбран вид оплаты';
     }
 
-    if (this._email === '') {
+    if (this.email === '') {
       errors.email = 'Необходимо указать email';
     }
 
-    if (this._phone === '') {
+    if (this.phone === '') {
       errors.phone = 'Необходимо указать номер телефона';
     }
 
-    if (this._address === '') {
+    if (this.address === '') {
       errors.address = 'Необходимо указать адрес доставки';
     }
 
