@@ -1,3 +1,5 @@
+import { TCustomerErrors } from "../types";
+
 export function pascalToKebab(value: string): string {
     return value.replace(/([a-z0–9])([A-Z])/g, "$1-$2").toLowerCase();
 }
@@ -46,6 +48,9 @@ export function ensureElement<T extends HTMLElement>(selectorElement: SelectorEl
 
 export function cloneTemplate<T extends HTMLElement>(query: string | HTMLTemplateElement): T {
     const template = ensureElement(query) as HTMLTemplateElement;
+    if (!template.content.firstElementChild) {
+        throw new Error(`Template ${query} has no content`);
+    }
     return template.content.firstElementChild.cloneNode(true) as T;
 }
 
@@ -66,7 +71,7 @@ export function getObjectProperties(obj: object, filter?: (name: string, prop: P
         )
     )
         .filter(([name, prop]: [string, PropertyDescriptor]) => filter ? filter(name, prop) : (name !== 'constructor'))
-        .map(([name, prop]) => name);
+        .map(([name,]) => name);
 }
 
 /**
@@ -132,4 +137,33 @@ export function createElement<
         }
     }
     return element;
+}
+
+/**
+ * Функция извлекает текстовые сообщения об ошибках валидации
+ * только для указанных полей.
+ *
+ * @param validationErrors - объект с ошибками валидации (ключ — поле, значение — сообщение об ошибке)
+ *              или null, если ошибок нет
+ * @param fieldKeys - массив строк — ключи полей, для которых нужно получить сообщения об ошибках
+ * @param separator - строка-разделитель для объединения нескольких сообщений (по умолчанию: ', ')
+ * @returns Строка с объединёнными сообщениями об ошибках для указанных полей.
+ *          Если ошибок нет или validationErrors равен null, возвращает пустую строку.
+ *
+ * @example
+ * const errors = { email: 'Некорректный email', phone: 'Неверный формат телефона', address: 'Адрес обязателен' };
+ * const messages = getErrorMessages(errors, ['email', 'phone'], ' | ');
+ * // Результат: 'Некорректный email | Неверный формат телефона'
+ */
+export function getErrorMessages (
+  validationErrors: TCustomerErrors | null,
+  fieldKeys: string[],
+  separator: string = ', '
+): string {
+  return validationErrors
+    ? Object.entries(validationErrors)
+        .filter(([key]) => fieldKeys.includes(key))
+        .map(([key, message]) => message)
+        .join(separator)
+    : '';
 }
