@@ -2,6 +2,8 @@
 // Обеспечивает валидацию данных перед отправкой на сервер.
 
 import { ICustomer, TPayment } from "../../types";
+import { EventTopic } from "../../utils/constants";
+import { IEvents } from "../base/Events";
 
 type TBuyerErrors = Partial<Record<keyof ICustomer, string>>;
 
@@ -15,13 +17,16 @@ export class Customer implements ICustomer {
   // Физичиский адрес покупателя.
   private address: string = '';
 
-  constructor() {}
+  constructor(private events: IEvents) {
+    this.events = events;
+  }
 
   /**
    * Обновляет только те поля, которые переданы в объекте data, не затрагивая остальные. Позволяет обновлять данные поэтапно.
    * @param {Partial<ICustomer>} data  - объект с частичными данными покупателя
    */
   setData(data: Partial<ICustomer>): void {
+    
     if (data.payment !== undefined) {
       this.payment = data.payment;
     }
@@ -34,6 +39,8 @@ export class Customer implements ICustomer {
     if (data.address !== undefined) {
       this.address = data.address;
     }
+    this.events.emit(EventTopic.ORDER_FORM_VALIDATION_ERROR);
+    this.events.emit(EventTopic.CONTACT_FORM_VALIDATION_ERROR);
   }
 
   /**
@@ -66,7 +73,7 @@ export class Customer implements ICustomer {
   validate(): TBuyerErrors | null {
     const errors: TBuyerErrors = {};
 
-    if (this.payment === null) {
+    if (!this.payment) {
       errors.payment = 'Не выбран вид оплаты';
     }
 

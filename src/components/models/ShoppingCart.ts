@@ -3,12 +3,17 @@
 // для работы с корзиной.
 
 import { IProduct } from "../../types";
+import { EventTopic } from "../../utils/constants";
+import { IEvents } from "../base/Events";
 
 export class ShoppingCart {
   // Массив товаров, добавленных в корзину.
   private productList: IProduct[] = [];
 
-  constructor() {}
+
+  constructor(private events: IEvents) {
+    this.events = events;
+  }
 
   /**
    * @returns {IProduct[]} - Возвращает все товары, находящиеся в корзине.
@@ -26,6 +31,7 @@ export class ShoppingCart {
   add(product: IProduct): void {
     if (!this.hasProduct(product.id)) {
       this.productList.push(product);
+      this.events.emit(EventTopic.BASKET_LIST_UPDATE);
     }
   }
 
@@ -37,6 +43,7 @@ export class ShoppingCart {
     const index = this.productList.findIndex(item => item.id === product.id);
     if (index !== -1) {
       this.productList.splice(index, 1);
+      this.events.emit(EventTopic.BASKET_LIST_UPDATE);
     }
   }
 
@@ -45,6 +52,7 @@ export class ShoppingCart {
    */
   clear(): void {
     this.productList = [];
+    this.events.emit(EventTopic.BASKET_LIST_UPDATE);
   }
 
   /**

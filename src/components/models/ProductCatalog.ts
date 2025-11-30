@@ -2,6 +2,8 @@
 // Содержит полный список доступных товаров и текущий выбранный товар для детального просмотра.
 
 import { IProduct } from "../../types";
+import { EventTopic } from "../../utils/constants";
+import { IEvents } from "../base/Events";
 
 export class ProductCatalog {
   // Предназначен для хранения скписка товара.
@@ -10,13 +12,16 @@ export class ProductCatalog {
   // если товар не выбран).
   private selectedProduct: IProduct | null = null;
 
-  constructor() {}
+  constructor(private events: IEvents) {
+    this.events = events;
+  }
 
   /**
    * @param {IProduct[]} productList Сохраняет переданный массив товаров.
    */
   setProductList(productList: IProduct[]): void {
     this.productList = productList;
+    this.events.emit(EventTopic.PRODUCT_RECEIVED, productList);
   }
   
   /**
@@ -42,6 +47,7 @@ export class ProductCatalog {
    */
   setSelectedProduct(product: IProduct): void {
     this.selectedProduct = product;
+    this.events.emit(EventTopic.PRODUCT_SELECTED, this.selectedProduct);
   }
 
   /**
