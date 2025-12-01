@@ -40,34 +40,29 @@ export enum EventTopic {
   BASKET_PRODUCT_REMOVE = 'basket:productRemove',
   /** Событие: обновление списка товаров в корзине. */
   BASKET_LIST_UPDATE = 'basket:listUpdate',
-  /** Событие: оформление заказа из корзины. */
-  BASKET_ORDER = 'basket:order',
+  /** Событие: изменение данных пользователя. */
+  CUSTOMER_RECEIVED = 'customer:received',
 
-  // Форма оформления заказа (способ оплаты, адрес)
+  // Формы
 
-  /** Событие: открытие формы. */
+  /** Событие: водидации форм. */
+  FORM_VALIDATION = 'form:validation',
+  /** Событие: выбора способа оплаты. */
+  FORM_PAYMENT_SELECT = 'form:paymentSelect',
+  /** Событие: ввод адреса. */
+  FORM_ADDRESS_INPUT = 'form:addressInput',
+  /** Событие: ввод email. */
+  FORM_EMAIL_INPUT = 'form:emailInput',
+  /** Событие: ввод телефона. */
+  FORM_PHONE_INPUT = 'form:phoneInput',
+
+  /** Событие: открытие формы orderForm. */
   ORDER_FORM_OPEN = 'orderForm:open',
-  /** Событие: выбор способа оплаты онлайн в формы. */
-  ORDER_FORM_ONLINE_METHOD_SELECT = 'orderForm:paymentOnlineSelect',
-  /** Событие: выбор способа оплаты при получении в формы. */
-  ORDER_FORM_CASH_METHOD_SELECT = 'orderForm:paymentCashSelect',
-  /** Событие: ввод адреса доставки в формы. */
-  ORDER_FORM_ADDRESS_INPUT = 'orderForm:addressInput',
   /** Событие: отправка заказа, submit формы Order. */
   ORDER_FORM_SUBMIT = 'orderForm:submit',
-  /** Событие: ошибка валидации данных формы Order. */
-  ORDER_FORM_VALIDATION_ERROR = 'orderForm:validationError',
-
-  // Форма оформление заказа (почта, телефон)
-
-  /** Событие: ввод email в форме ContactForm. */
-  CONTACT_FORM_EMAIL_INPUT = 'contactForm:emailInput',
-  /** Событие: ввод телефона в форме ContactForm. */
-  CONTACT_FORM_PHONE_INPUT = 'contactForm:phoneInput',
+  
   /** Событие: отправка формы ContactForm. */
   CONTACT_FORM_SUBMIT = 'contactForm:submit',
-  /** Событие: ошибка валидации данных формы ContactForm. */
-  CONTACT_FORM_VALIDATION_ERROR = 'orderForm:validationError',
 
   /** Событие: закрытие модального окна. */
   MODAL_CLOSE = 'modal:close',

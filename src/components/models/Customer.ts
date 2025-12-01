@@ -39,8 +39,7 @@ export class Customer implements ICustomer {
     if (data.address !== undefined) {
       this.address = data.address;
     }
-    this.events.emit(EventTopic.ORDER_FORM_VALIDATION_ERROR);
-    this.events.emit(EventTopic.CONTACT_FORM_VALIDATION_ERROR);
+    this.events.emit(EventTopic.CUSTOMER_RECEIVED);
   }
 
   /**
@@ -64,6 +63,7 @@ export class Customer implements ICustomer {
     this.email = '';
     this.phone = '';
     this.address = '';
+    this.events.emit(EventTopic.CUSTOMER_RECEIVED);
   }
 
   /**

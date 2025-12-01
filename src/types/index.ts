@@ -45,6 +45,12 @@ export interface ICustomer {
 }
 
 /**
+ * Тип для данных формы ввода.
+ * Представляет частичное подмножество данных покупателя.
+ */
+export type TFormData = Partial<ICustomer>
+
+/**
  * Интерфейс запроса на оформление заказа.
  * Расширяет данные покупателя информацией о заказе.
  */
@@ -63,88 +69,8 @@ export interface ISubmitAndGetIdTotal {
 }
 
 /**
- * Интерфейс товара карточки, дополнительной информации. 
- * url изображения и тект кнопки.
- */
-export interface IUrlAndButtonText {
-  imageUrl: string;
-  buttonTextContent: string;
-}
-
-/** Интерфейс данных, порядковый номер */
-export interface IItemIndex {
-  itemIndex: string;
-}
-
-/**
  * Интерфейс действий для карточки товара.
  */
 export interface ICardActions {
   onClick(): void;
 } 
-
-/**
- * Интерфейс ошибок валидации формы ввода данных покупателя.
- * Содержит сообщения об ошибках для полей.
- */
-export interface IFormError extends ICustomer {
-  error: string;
-}
-
-/**
- * Хранит список товаров.
- */
-export interface IProductDOMList {
-  productItems: HTMLElement[];
-}
-
-/**
- * Интерфейс итоговой суммы заказа.
- * Содержит рассчитанную стоимость покупки.
- */
-export interface IOrderTotal {
-  orderTotal: number;
-}
-
-/**
- * Возвращается при успешном выполнении операции.
- */
-export interface ISuccess {
-  description: string;
-}
-
-/**
- * Тип для комбинированных данных корзины и итоговой суммы.
- * Объединяет частичные данные корзины и суммы заказа.
- */
-export type TBasketListAndOrderTotal = Partial<IProductDOMList> & Partial<IOrderTotal>
-
-/**
- * Тип для данных формы ввода.
- * Представляет частичное подмножество данных покупателя.
- */
-export type TFormData = Partial<ICustomer>
-
-/**
- * Тип для товара с порядковым номером.
- * Объединяет частичное описание товара и его порядковый номер в корзине.
- */
-export type TSequentialProduct = Partial<IProduct> & Partial<IItemIndex>
-
-/**
- * Тип для товара карточки, дополнительной информации. 
- * url изображения и тект кнопки.
- */
-export type TProductUrlButtonText = Partial<IProduct> & Partial<IUrlAndButtonText>
-
-/**
- * Тип для данных успешного ответа.
- * Возвращается при успешном выполнении операции.
- */
-export type TSuccessData = Partial<ISuccess> 
-
-/**
- * Тип для ошибок данных покупателя.
- * Содержит частичное подмножество возможных ошибок валидации.
- */
-export type TCustomerErrors = Partial<ICustomer>

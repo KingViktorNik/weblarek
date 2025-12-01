@@ -1,8 +1,8 @@
 import './scss/styles.scss';
 import { Api } from './components/base/Api';
-import { API_URL, BUTTON_TEXT_BUY, BUTTON_TEXT_REMOVE, BUTTON_TEXT_UNAVAILABLE, CDN_URL, EventTopic } from './utils/constants';
+import { API_URL, BUTTON_TEXT_BUY, BUTTON_TEXT_REMOVE, BUTTON_TEXT_UNAVAILABLE, CDN_URL, CURRENCY, EventTopic } from './utils/constants';
 import { ApiService } from './components/services/ApiService';
-import { IProduct, IProductDOMList, TBasketListAndOrderTotal, TCustomerErrors, TFormData,TProductUrlButtonText, TSequentialProduct } from './types';
+import { IOrderRequest, IProduct, ISubmitAndGetIdTotal, TFormData, TPayment} from './types';
 import { cloneTemplate, ensureElement, getErrorMessages } from './utils/utils';
 import { EventEmitter } from './components/base/Events';
 import { Modal } from './components/views/Modal';
@@ -18,7 +18,6 @@ import { OrderForm } from './components/views/forms/implementations/OrderForm';
 import { Customer } from './components/models/Customer';
 import { ContactsForm } from './components/views/forms/implementations/ContactsForm';
 import { SuccessForm } from './components/views/forms/SuccessForm';
-import { OrderManager } from './components/services/OrderManager';
 
 // Получаем основные DOM‑элементы интерфейса
 const page = ensureElement(document.querySelector('.page') as HTMLElement);
@@ -50,52 +49,31 @@ const orderForm = new OrderForm(eventEmitter, cloneTemplate('#order'));
 const contactsForm = new ContactsForm(eventEmitter, cloneTemplate('#contacts'));
 const successForm = new SuccessForm(eventEmitter, cloneTemplate('#success'));
 
-// Создаём менеджер заказов
-const orderManager = new OrderManager(
-  apiService,
-  customer,
-  shoppingCart,
-  modal,
-  successForm,
-  header
-);
-
-/**
- * Загрузка списка товаров из API и сохранение в модели
- */
+/** Загрузка списка товаров из API и сохранение в модели */
 apiService.getProducts()
   .then(products => {
     productsModel.setProductList(products);
   }) 
   .catch(error => console.error('Ошибка при загрузке товаров из каталога API:', error));
 
-/**
- * Обработка события получения списка товаров — отображаем их в галерее
- */
+/** Обработка события получения списка товаров — отображаем их в галерее */
 eventEmitter.on(EventTopic.PRODUCT_RECEIVED, () => {
-  const itemsCard = productsModel.getProductList().map(product => {
-    const card = new ProductCard(cloneTemplate('#card-catalog'), {
+  const productList = productsModel.getProductList().map(product => {
+    const productCard = new ProductCard(cloneTemplate('#card-catalog'), {
       onClick: () => eventEmitter.emit(EventTopic.PRODUCT_SELECT_CARD, product) 
     });
     
-    const data: TProductUrlButtonText = {
+    const productData =  {
       ...product,
-      imageUrl: CDN_URL
+      image: CDN_URL + product.image
     }    
-    
-    return card.render(data);
+    return productCard.render(productData);
   });
-
-  const galleryData: IProductDOMList = {
-    productItems: itemsCard
-  }
   
-  gallery.render(galleryData);
+  gallery.productList = productList;
 });
 
-/**
- * Обработка выбора карточки товара — сохраняем выбранный товар в модели
- */
+/** Обработка выбора карточки товара — сохраняем выбранный товар в модели */
 eventEmitter.on(EventTopic.PRODUCT_SELECT_CARD, 
   (card: IProduct) => {
     const product = productsModel.getProductById(card.id);
@@ -113,29 +91,21 @@ eventEmitter.on(EventTopic.PRODUCT_SELECT_CARD,
       }
     }
 
-    const data: TProductUrlButtonText = {
+    const data = {
       ...product, 
-      imageUrl: CDN_URL,
-      buttonTextContent: buttonTextContent
+      image: CDN_URL + product.image,
+      textButton: buttonTextContent
     }
-
     previewCard.render(data);
     productsModel.setSelectedProduct(product);
   });
 
-/**
- * Открытие предпросмотра карточки товара в модальном окне
- */
+/** Открытие предпросмотра карточки товара в модальном окне */
 eventEmitter.on(EventTopic.PRODUCT_SELECTED, () => {
-  const selectedProduct = productsModel.getSelectedProduct();
-  previewCard.updateButtonState(selectedProduct?.price);
-
   modal.open(previewCard.render())
 });
 
-/**
- * Добавление/удаление товара в корзине при отправке действия из карточки
- */
+/** Добавление/удаление товара в корзине при отправке действия из карточки */
 eventEmitter.on(EventTopic.PRODUCT_SUBMIT, () => {
   const product = productsModel.getSelectedProduct();
 
@@ -145,15 +115,17 @@ eventEmitter.on(EventTopic.PRODUCT_SUBMIT, () => {
     } else {
       shoppingCart.add(product);
     }
+    
+    const headerData = { 
+      counter:shoppingCart.getProductCount() 
+    }
 
-    header.setCounter(shoppingCart.getProductCount());
+    header.render(headerData);
   }
   modal.close();
 });
 
-/**
- * Обновление списка товаров в корзине и отображение общей суммы
- */
+/** Обновление списка товаров в корзине и отображение общей суммы */
 eventEmitter.on(EventTopic.BASKET_LIST_UPDATE, () => {
   const list = shoppingCart.getList()
     .map( (product, index) => {
@@ -161,93 +133,77 @@ eventEmitter.on(EventTopic.BASKET_LIST_UPDATE, () => {
         onClick: () => eventEmitter.emit(EventTopic.BASKET_PRODUCT_REMOVE, product)
       })
 
-    const productData: TSequentialProduct = {
+    const productData = {
       ...product,
-      itemIndex: (++index).toString()
+      indexElement: ++index
     };
 
     return productBasket.render(productData);
   });
 
-  const basketData: TBasketListAndOrderTotal = {
-    productItems: list,
-    orderTotal: shoppingCart.getTotalPrice()
+  const basketData = {
+    listProduct: list,
+    priceTotal: shoppingCart.getTotalPrice(),
+    isOrderButtonDisabled: shoppingCart.getTotalPrice() === 0  
   }
   
   basket.render(basketData);
 }); 
 
-/**
- * Открытие модального окна с корзиной товаров
- */
+/** Открытие модального окна с корзиной товаров */
 eventEmitter.on(EventTopic.BASKET_OPEN, () => modal.open(basket.render())); 
 
-/**
- * Удаление товара из корзины
- */
+/** Удаление товара из корзины */
 eventEmitter.on(EventTopic.BASKET_PRODUCT_REMOVE, (product: IProduct) => {
   const basketProduct = productsModel.getProductById(product.id);
 
   if (basketProduct) {
     shoppingCart.remove(basketProduct);
-    header.setCounter(shoppingCart.getProductCount())
+
+    const headerData = { 
+      counter:shoppingCart.getProductCount() 
+    }
+
+    header.render(headerData)
   }
 
-  shoppingCart.getList().length === 0 
-    ? basket.basketButtonDisable()
-    : basket.basketButtonEnable();
-
-  const basketData: TBasketListAndOrderTotal = {
-    orderTotal: shoppingCart.getTotalPrice()
-  }
-
-  basket.render(basketData);
 });
 
-/**
- * Открытие формы оформления заказа (способ оплаты, адрес)
- */
-eventEmitter.on(EventTopic.ORDER_FORM_OPEN, () => {
-  modal.open(orderForm.render(customer.getData()));
+/** Обновление данных о покупателе */
+eventEmitter.on(EventTopic.CUSTOMER_RECEIVED, () => {
+  const customerData = {...customer.getData()};
+  eventEmitter.emit(EventTopic.FORM_VALIDATION);
+  orderForm.render(customerData);
+  contactsForm.render(customerData);
 });
 
-/**
- * Выбор способа оплаты «онлайн»
- */
-eventEmitter.on(EventTopic.ORDER_FORM_ONLINE_METHOD_SELECT, 
-  (data: TFormData)  => {
-  if (data.payment) {
-    orderForm.paymentOnline(true);
-    customer.setData(data);
-  }
-});
-/**
- * Выбор способа оплаты «при получении»
- */
-eventEmitter.on(EventTopic.ORDER_FORM_CASH_METHOD_SELECT, (data: TFormData) => {
-  if (data.payment) {
-    orderForm.paymentCash(true);
-    customer.setData(data);
-  }
-});
+/* Открытие формы оформления заказа (способ оплаты, адрес) */
+eventEmitter.on(EventTopic.ORDER_FORM_OPEN, () => 
+  modal.open(orderForm.render())
+);
 
-/**
- * Обработка ввода адреса доставки в форме заказа.
- * Сохраняет введённые данные в модель клиента.
- */
-eventEmitter.on(EventTopic.ORDER_FORM_ADDRESS_INPUT, (data: TFormData) => {
-  customer.setData(data);
-});
-
-/**
- * Обработка отправки формы заказа (нажатие кнопки submit).
- * Предотвращает стандартное поведение формы и инициирует открытие формы контактов.
- */
 eventEmitter.on(EventTopic.ORDER_FORM_SUBMIT, (event: SubmitEvent) => {
   event.preventDefault();
   modal.open(contactsForm.render());
-  contactsForm.enableSubmit();
 })
+
+/** Выбор способа оплаты */
+eventEmitter.on(EventTopic.FORM_PAYMENT_SELECT, (button:HTMLButtonElement) => {
+  customer.setData({ payment: button.name as TPayment });
+  orderForm.render ({ payment: customer.getData().payment });
+});
+
+eventEmitter.on(EventTopic.FORM_ADDRESS_INPUT, (data: TFormData) =>
+  customer.setData({ address: data.address })
+);
+
+eventEmitter.on(EventTopic.FORM_EMAIL_INPUT, (data: TFormData) => {
+  customer.setData({ email:data.email });
+});
+
+eventEmitter.on(EventTopic.FORM_PHONE_INPUT, (data: TFormData) => {
+  customer.setData({ phone: data.phone });
+});
 
 /**
  * Валидация данных формы заказа (адрес и способ оплаты).
@@ -255,53 +211,29 @@ eventEmitter.on(EventTopic.ORDER_FORM_SUBMIT, (event: SubmitEvent) => {
  * - Отображает ошибки в форме заказа.
  * - Блокирует кнопку отправки, если есть ошибки, иначе разблокирует.
  */
-eventEmitter.on(EventTopic.ORDER_FORM_VALIDATION_ERROR, () => {
+eventEmitter.on(EventTopic.FORM_VALIDATION, () => {
 
-  const errorMessage = getErrorMessages(
-    customer.validate() as TCustomerErrors,
+  const errorMessageOrderForm = getErrorMessages(
+    customer.validate(),
     ['address', 'payment']
   );
   
-  orderForm.setMessageError(errorMessage);
-  errorMessage
-    ? orderForm.disableSubmit()
-    : orderForm.enableSubmit();
-});
-
-/**
- * Обработка ввода email в форме контактов.
- * Сохраняет введённый email в модель клиента.
- */
-eventEmitter.on(EventTopic.CONTACT_FORM_EMAIL_INPUT, (data: TFormData) => {
-  customer.setData(data);
-});
-
-/**
- * Обработка ввода телефона в форме контактов.
- * Сохраняет введённый телефон в модель клиента.
- */
-eventEmitter.on(EventTopic.CONTACT_FORM_PHONE_INPUT, (data: TFormData) => {
-  customer.setData(data);
-});
-
-/**
- * Валидация данных формы контактов (email и телефон).
- * - Получает сообщения об ошибках через `getErrorMessages`.
- * - Отображает ошибки в форме контактов.
- * - Блокирует кнопку отправки, если есть ошибки, иначе разблокирует.
- */
-eventEmitter.on(EventTopic.CONTACT_FORM_VALIDATION_ERROR, () => {
-
-  const errorMessage = getErrorMessages(
-    customer.validate() as TCustomerErrors, 
+  const errorMessageContactsForm = getErrorMessages(
+    customer.validate(), 
     ['phone', 'email']
   );
-  
-  contactsForm.setMessageError(errorMessage);
-  errorMessage
-    ? contactsForm.disableSubmit()
-    : contactsForm.enableSubmit();
+
+  orderForm.render({ 
+    messageError: errorMessageOrderForm,
+    toggleSubmitButton: errorMessageOrderForm
+  });
+
+  contactsForm.render({ 
+    messageError: errorMessageContactsForm,
+    toggleSubmitButton: errorMessageContactsForm    
+  });
 });
+
 
 /**
  * Обработка отправки формы контактов.
@@ -310,7 +242,7 @@ eventEmitter.on(EventTopic.CONTACT_FORM_VALIDATION_ERROR, () => {
  */
 eventEmitter.on(EventTopic.CONTACT_FORM_SUBMIT, (event: SubmitEvent) => {
   event.preventDefault();
-  orderManager.submitOrder();
+  submitOrder();
 });
 
 /**
@@ -324,3 +256,43 @@ eventEmitter.on(EventTopic.SUCCESS_MODAL_CLOSE, () => modal.close());
 eventEmitter.on(EventTopic.MODAL_CLOSE, () => {
   modal.close();
 });
+
+/** Создаёт объект запроса на оформление заказа на основе текущих данных */
+function createOrderRequest(): IOrderRequest {
+  return {
+    ...customer.getData(),
+    items: shoppingCart.getList().map(item => item.id),
+    total: shoppingCart.getTotalPrice(),
+  };
+}
+
+/**Отправляет заказ через API */
+async function  submitOrder(): Promise<void> {
+  const orderRequest = createOrderRequest();
+  try {
+    const order = await apiService.sendOrder(orderRequest);
+    handleSuccess(order);
+  } catch (error) {
+    handleError(error as Error);
+  }
+}
+
+/** Обрабатывает успешный ответ от сервера после отправки заказа */
+function handleSuccess(order: ISubmitAndGetIdTotal): void {
+  // Открывает модальное окно с подтверждением успеха.
+  modal.open(
+    successForm.render({
+      description: `Списано ${order.total} ${CURRENCY}`
+    })
+  );
+  // Очищает корзину и данные клиента
+  shoppingCart.clear();
+  customer.clearData();
+  // Обновляет счётчик товаров в шапке
+  header.render({ counter: 0});
+}
+
+/** Обрабатывает ошибку при отправке заказа. Выводит ошибку в консоль */
+function handleError(error: Error): void {
+  console.error('Ошибка отправки заказа:', error);
+}
