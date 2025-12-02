@@ -1,4 +1,4 @@
-import { IApi, IProduct, ICustomer, IOrderRequest, ISubmitAndGetIdTotal } from '../../types';
+import { IApi, IProduct, IOrderRequest, ISubmitAndGetIdTotal } from '../../types';
 
 type TProductsApiResponse = { total: number, 
                              items:Promise<IProduct[]> 

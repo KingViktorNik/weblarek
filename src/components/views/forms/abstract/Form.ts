@@ -15,7 +15,7 @@ interface IForm extends ICustomer {
 
 /** Абстрактный базовый класс для форм ввода данных. */
 
-export abstract class Form<T> extends Component<IForm> {
+export abstract class Form extends Component<IForm> {
   protected submitButtonElement: HTMLButtonElement;
   protected formErrorsElement: HTMLElement;
 

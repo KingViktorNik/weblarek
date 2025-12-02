@@ -3,6 +3,12 @@ import { ensureElement } from "../../../../utils/utils";
 import { IEvents } from "../../../base/Events";
 import { ProductCard } from "./ProductCard";
 
+/** Интерфейс данных предпросмотра карточки товара */
+interface IPreviewCard {
+  description:string,
+  isButtonEnabled: boolean,
+  textButton: string
+}
 /**
  * Компонент предпросмотра карточки товара.
  *
@@ -11,7 +17,7 @@ import { ProductCard } from "./ProductCard";
  * - текстовое описание товара;
  * - логику управления состоянием кнопки в зависимости от цены.
  */
-export class PreviewCard extends ProductCard {
+export class PreviewCard extends ProductCard implements IPreviewCard {
   private cardButton: HTMLButtonElement;
   private cardText: HTMLElement;
 
@@ -30,12 +36,8 @@ export class PreviewCard extends ProductCard {
     this.cardText.textContent = cardDescription;
   }
 
-  set price (price: number | null) {
-    if (price) {
-      this.cardButton.disabled = false;
-    } else {
-      this.cardButton.disabled = true;
-    }
+  set isButtonEnabled (enabled: boolean) {
+      this.cardButton.disabled = !enabled;
   }
 
   set textButton (text: string) {

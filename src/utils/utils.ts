@@ -1,4 +1,4 @@
-import { TCustomerErrors } from "../types";
+import { ICustomer } from "../types";
 
 export function pascalToKebab(value: string): string {
     return value.replace(/([a-z0–9])([A-Z])/g, "$1-$2").toLowerCase();
@@ -156,14 +156,14 @@ export function createElement<
  * // Результат: 'Некорректный email | Неверный формат телефона'
  */
 export function getErrorMessages (
-  validationErrors: TCustomerErrors | null,
+  validationErrors: Partial<ICustomer> | null,
   fieldKeys: string[],
   separator: string = ', '
 ): string {
   return validationErrors
     ? Object.entries(validationErrors)
         .filter(([key]) => fieldKeys.includes(key))
-        .map(([key, message]) => message)
+        .map(([_, message]) => message)
         .join(separator)
     : '';
 }

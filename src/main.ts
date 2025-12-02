@@ -2,7 +2,7 @@ import './scss/styles.scss';
 import { Api } from './components/base/Api';
 import { API_URL, BUTTON_TEXT_BUY, BUTTON_TEXT_REMOVE, BUTTON_TEXT_UNAVAILABLE, CDN_URL, CURRENCY, EventTopic } from './utils/constants';
 import { ApiService } from './components/services/ApiService';
-import { IOrderRequest, IProduct, ISubmitAndGetIdTotal, TFormData, TPayment} from './types';
+import { ICustomer, IOrderRequest, IProduct, ISubmitAndGetIdTotal, TFormData, TPayment} from './types';
 import { cloneTemplate, ensureElement, getErrorMessages } from './utils/utils';
 import { EventEmitter } from './components/base/Events';
 import { Modal } from './components/views/Modal';
@@ -94,6 +94,7 @@ eventEmitter.on(EventTopic.PRODUCT_SELECT_CARD,
     const data = {
       ...product, 
       image: CDN_URL + product.image,
+      isButtonEnabled: product.price,
       textButton: buttonTextContent
     }
     previewCard.render(data);
@@ -115,12 +116,6 @@ eventEmitter.on(EventTopic.PRODUCT_SUBMIT, () => {
     } else {
       shoppingCart.add(product);
     }
-    
-    const headerData = { 
-      counter:shoppingCart.getProductCount() 
-    }
-
-    header.render(headerData);
   }
   modal.close();
 });
@@ -147,6 +142,7 @@ eventEmitter.on(EventTopic.BASKET_LIST_UPDATE, () => {
     isOrderButtonDisabled: shoppingCart.getTotalPrice() === 0  
   }
   
+  header.render({ counter:shoppingCart.getProductCount() });
   basket.render(basketData);
 }); 
 
@@ -159,12 +155,6 @@ eventEmitter.on(EventTopic.BASKET_PRODUCT_REMOVE, (product: IProduct) => {
 
   if (basketProduct) {
     shoppingCart.remove(basketProduct);
-
-    const headerData = { 
-      counter:shoppingCart.getProductCount() 
-    }
-
-    header.render(headerData)
   }
 
 });
@@ -172,9 +162,28 @@ eventEmitter.on(EventTopic.BASKET_PRODUCT_REMOVE, (product: IProduct) => {
 /** Обновление данных о покупателе */
 eventEmitter.on(EventTopic.CUSTOMER_RECEIVED, () => {
   const customerData = {...customer.getData()};
-  eventEmitter.emit(EventTopic.FORM_VALIDATION);
-  orderForm.render(customerData);
-  contactsForm.render(customerData);
+
+    const errorMessageOrderForm = getErrorMessages (
+    customer.validate() as ICustomer,
+    ['address', 'payment']
+  );
+  
+  const errorMessageContactsForm = getErrorMessages (
+    customer.validate() as ICustomer, 
+    ['phone', 'email']
+  );
+
+  orderForm.render({ 
+    ...customerData,
+    messageError: errorMessageOrderForm,
+    toggleSubmitButton: errorMessageOrderForm
+  });
+
+  contactsForm.render({
+    ...customerData, 
+    messageError: errorMessageContactsForm,
+    toggleSubmitButton: errorMessageContactsForm    
+  });
 });
 
 /* Открытие формы оформления заказа (способ оплаты, адрес) */
@@ -190,7 +199,6 @@ eventEmitter.on(EventTopic.ORDER_FORM_SUBMIT, (event: SubmitEvent) => {
 /** Выбор способа оплаты */
 eventEmitter.on(EventTopic.FORM_PAYMENT_SELECT, (button:HTMLButtonElement) => {
   customer.setData({ payment: button.name as TPayment });
-  orderForm.render ({ payment: customer.getData().payment });
 });
 
 eventEmitter.on(EventTopic.FORM_ADDRESS_INPUT, (data: TFormData) =>
@@ -204,36 +212,6 @@ eventEmitter.on(EventTopic.FORM_EMAIL_INPUT, (data: TFormData) => {
 eventEmitter.on(EventTopic.FORM_PHONE_INPUT, (data: TFormData) => {
   customer.setData({ phone: data.phone });
 });
-
-/**
- * Валидация данных формы заказа (адрес и способ оплаты).
- * - Получает сообщения об ошибках через `getErrorMessages`.
- * - Отображает ошибки в форме заказа.
- * - Блокирует кнопку отправки, если есть ошибки, иначе разблокирует.
- */
-eventEmitter.on(EventTopic.FORM_VALIDATION, () => {
-
-  const errorMessageOrderForm = getErrorMessages(
-    customer.validate(),
-    ['address', 'payment']
-  );
-  
-  const errorMessageContactsForm = getErrorMessages(
-    customer.validate(), 
-    ['phone', 'email']
-  );
-
-  orderForm.render({ 
-    messageError: errorMessageOrderForm,
-    toggleSubmitButton: errorMessageOrderForm
-  });
-
-  contactsForm.render({ 
-    messageError: errorMessageContactsForm,
-    toggleSubmitButton: errorMessageContactsForm    
-  });
-});
-
 
 /**
  * Обработка отправки формы контактов.
@@ -288,8 +266,6 @@ function handleSuccess(order: ISubmitAndGetIdTotal): void {
   // Очищает корзину и данные клиента
   shoppingCart.clear();
   customer.clearData();
-  // Обновляет счётчик товаров в шапке
-  header.render({ counter: 0});
 }
 
 /** Обрабатывает ошибку при отправке заказа. Выводит ошибку в консоль */

@@ -11,7 +11,7 @@ interface IContactsForm {
 }
 
 /** Компонент формы ввода контактных данных (email и телефон) */
-export class ContactsForm extends Form<IContactsForm> {
+export class ContactsForm extends Form implements IContactsForm  {
   private emailElement: HTMLInputElement;
   private phoneElement: HTMLInputElement;
 
