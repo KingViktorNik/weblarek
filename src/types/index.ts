@@ -45,6 +45,23 @@ export interface ICustomer {
 }
 
 /**
+ * Интерфейс сервиса управления данными покупателя.
+ * Обеспечивает CRUD‑операции и валидацию информации о клиенте.
+ */
+export interface ICustomerService {
+  setData(data: Partial<ICustomer>): void;
+  getData(): ICustomer;
+  clearData(): void;
+  validate(): TBuyerErrors | null;
+}
+
+/**
+ * Тип для хранения ошибок валидации данных покупателя.
+ * Ключ — имя поля ICustomer, значение — сообщение об ошибке.
+ */
+type TBuyerErrors = Partial<Record<keyof ICustomer, string>>;
+
+/**
  * Тип для данных формы ввода.
  * Представляет частичное подмножество данных покупателя.
  */

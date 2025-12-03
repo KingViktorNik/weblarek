@@ -1,13 +1,13 @@
 //  Класс Customer хранит и управляет данными покупателя, необходимыми для оформления заказа.
 // Обеспечивает валидацию данных перед отправкой на сервер.
 
-import { ICustomer, TPayment } from "../../types";
+import { ICustomer, ICustomerService, TPayment } from "../../types";
 import { EventTopic } from "../../utils/constants";
 import { IEvents } from "../base/Events";
 
 type TBuyerErrors = Partial<Record<keyof ICustomer, string>>;
 
-export class Customer implements ICustomer {
+export class Customer implements ICustomerService {
   // Выбранный способ оплаты
   private payment: TPayment = '';
   // Адрес электронной почты покупателя.
